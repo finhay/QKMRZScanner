@@ -191,9 +191,18 @@ public class QKMRZScannerView: UIView {
             return
         }
         if #available(iOS 15.0, *) {
-            deviceInput.device.videoZoomFactor = 1.5
-            deviceInput.device.autoFocusRangeRestriction = .near
-            deviceInput.device.unlockForConfiguration()
+            do {
+                if camera.isAutoFocusRangeRestrictionSupported {
+                    print("TEST isAutoFocusRangeRestrictionSupported")
+                    try camera.lockForConfiguration()
+                    camera.videoZoomFactor = 1.5
+                    camera.autoFocusRangeRestriction = .near // Optimize for near objects
+                    camera.unlockForConfiguration()
+                }
+                print("TEST NOTTTTT isAutoFocusRangeRestrictionSupported")
+            } catch {
+                print("TEST Failed to configure camera: \(error)")
+            }
         }
         
         observer = captureSession.observe(\.isRunning, options: [.new]) { [unowned self] (model, change) in
