@@ -195,7 +195,7 @@ public class QKMRZScannerView: UIView {
                 if camera.isAutoFocusRangeRestrictionSupported {
                     print("TEST isAutoFocusRangeRestrictionSupported")
                     try camera.lockForConfiguration()
-                    camera.videoZoomFactor = 1.5
+//                    camera.videoZoomFactor = 1.5
                     camera.autoFocusRangeRestriction = .near // Optimize for near objects
                     camera.unlockForConfiguration()
                 }
