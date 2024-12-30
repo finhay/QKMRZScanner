@@ -181,7 +181,14 @@ public class QKMRZScannerView: UIView {
     fileprivate func initCaptureSession() {
         captureSession.sessionPreset = .hd1920x1080
         
-        guard let camera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) else {
+        let cameraType: AVCaptureDevice.DeviceType
+        if #available(iOS 13.0, *) {
+            cameraType = .builtInUltraWideCamera
+        } else {
+            cameraType = .builtInWideAngleCamera
+        }
+
+        guard let camera = AVCaptureDevice.default(cameraType, for: .video, position: .back) else {
             print("Camera not accessible")
             return
         }
@@ -190,19 +197,30 @@ public class QKMRZScannerView: UIView {
             print("Capture input could not be initialized")
             return
         }
-        if #available(iOS 15.0, *) {
-            do {
-                if camera.isAutoFocusRangeRestrictionSupported {
-                    print("TEST isAutoFocusRangeRestrictionSupported")
-                    try camera.lockForConfiguration()
-//                    camera.videoZoomFactor = 1.5
-                    camera.autoFocusRangeRestriction = .near // Optimize for near objects
-                    camera.unlockForConfiguration()
-                }
-                print("TEST NOTTTTT isAutoFocusRangeRestrictionSupported")
-            } catch {
-                print("TEST Failed to configure camera: \(error)")
+        do {
+            // Kiểm tra hỗ trợ khóa cấu hình và cấu hình camera
+            try camera.lockForConfiguration()
+            
+            // Kiểm tra và thiết lập videoZoomFactor
+            let desiredZoomFactor: CGFloat = 1.5
+            if camera.activeFormat.videoMaxZoomFactor >= desiredZoomFactor {
+                camera.videoZoomFactor = desiredZoomFactor
+                print("Zoom factor set to \(desiredZoomFactor)")
+            } else {
+                print("Desired zoom factor exceeds maximum limit: \(camera.activeFormat.videoMaxZoomFactor)")
             }
+            
+            // Kiểm tra và thiết lập autoFocusRangeRestriction
+            if camera.isAutoFocusRangeRestrictionSupported {
+                camera.autoFocusRangeRestriction = .near // Tối ưu hóa cho chụp gần
+                print("AutoFocusRangeRestriction set to .near")
+            } else {
+                print("AutoFocusRangeRestriction is not supported on this device.")
+            }
+            
+            camera.unlockForConfiguration()
+        } catch {
+            print("Failed to configure camera: \(error.localizedDescription)")
         }
         
         observer = captureSession.observe(\.isRunning, options: [.new]) { [unowned self] (model, change) in
