@@ -183,8 +183,22 @@ public class QKMRZScannerView: UIView {
         
         let cameraType: AVCaptureDevice.DeviceType
         if #available(iOS 13.0, *) {
-            cameraType = .builtInUltraWideCamera
+            // Kiểm tra hỗ trợ Ultra Wide Camera
+            let discoverySession = AVCaptureDevice.DiscoverySession(
+                deviceTypes: [.builtInUltraWideCamera],
+                mediaType: .video,
+                position: .back
+            )
+            
+            if discoverySession.devices.isEmpty {
+                print("Ultra Wide Camera không được hỗ trợ trên thiết bị này.")
+                cameraType = .builtInWideAngleCamera // Fallback sang Wide Angle Camera
+            } else {
+                print("Ultra Wide Camera được hỗ trợ.")
+                cameraType = .builtInUltraWideCamera
+            }
         } else {
+            print("Ultra Wide Camera không được hỗ trợ trên iOS dưới 13.")
             cameraType = .builtInWideAngleCamera
         }
 
@@ -200,15 +214,15 @@ public class QKMRZScannerView: UIView {
         do {
             // Kiểm tra hỗ trợ khóa cấu hình và cấu hình camera
             try camera.lockForConfiguration()
-            
-            // Kiểm tra và thiết lập videoZoomFactor
-            let desiredZoomFactor: CGFloat = 1.5
-            if camera.activeFormat.videoMaxZoomFactor >= desiredZoomFactor {
-                camera.videoZoomFactor = desiredZoomFactor
-                print("Zoom factor set to \(desiredZoomFactor)")
-            } else {
-                print("Desired zoom factor exceeds maximum limit: \(camera.activeFormat.videoMaxZoomFactor)")
-            }
+//            
+//            // Kiểm tra và thiết lập videoZoomFactor
+//            let desiredZoomFactor: CGFloat = 1.5
+//            if camera.activeFormat.videoMaxZoomFactor >= desiredZoomFactor {
+//                camera.videoZoomFactor = desiredZoomFactor
+//                print("Zoom factor set to \(desiredZoomFactor)")
+//            } else {
+//                print("Desired zoom factor exceeds maximum limit: \(camera.activeFormat.videoMaxZoomFactor)")
+//            }
             
             // Kiểm tra và thiết lập autoFocusRangeRestriction
             if camera.isAutoFocusRangeRestrictionSupported {
