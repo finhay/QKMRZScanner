@@ -178,29 +178,46 @@ public class QKMRZScannerView: UIView {
         ])
     }
     
-    fileprivate func initCaptureSession() {
-        captureSession.sessionPreset = .hd1920x1080
-        
-        let cameraType: AVCaptureDevice.DeviceType
+    fileprivate func configureCamera() -> AVCaptureDevice.DeviceType {
+        // Khởi tạo DiscoverySession để kiểm tra các camera khả dụng
         if #available(iOS 13.0, *) {
-            // Kiểm tra hỗ trợ Ultra Wide Camera
             let discoverySession = AVCaptureDevice.DiscoverySession(
-                deviceTypes: [.builtInUltraWideCamera],
+                deviceTypes: [.builtInWideAngleCamera, .builtInUltraWideCamera, .builtInTelephotoCamera],
                 mediaType: .video,
                 position: .back
             )
             
-            if discoverySession.devices.isEmpty {
-                print("Ultra Wide Camera không được hỗ trợ trên thiết bị này.")
-                cameraType = .builtInWideAngleCamera // Fallback sang Wide Angle Camera
+            // Lấy danh sách các camera khả dụng
+            let devices = discoverySession.devices
+            
+            // Đếm số loại camera
+            var cameraTypes: [AVCaptureDevice.DeviceType] = []
+            for device in devices {
+                if !cameraTypes.contains(device.deviceType) {
+                    cameraTypes.append(device.deviceType)
+                }
+            }
+            
+            // Xử lý theo số lượng camera
+            if cameraTypes.contains(.builtInUltraWideCamera) && cameraTypes.count >= 3 {
+                print("Thiết bị có 3 camera, sử dụng Ultra Wide Camera.")
+                return .builtInUltraWideCamera
+            } else if cameraTypes.count == 2 {
+                print("Thiết bị có 2 camera, sử dụng Wide Angle Camera.")
+                return .builtInWideAngleCamera
             } else {
-                print("Ultra Wide Camera được hỗ trợ.")
-                cameraType = .builtInUltraWideCamera
+                print("Thiết bị không có Ultra Wide Camera. Sử dụng Wide Angle Camera.")
+                return .builtInWideAngleCamera
             }
         } else {
-            print("Ultra Wide Camera không được hỗ trợ trên iOS dưới 13.")
-            cameraType = .builtInWideAngleCamera
+            return .builtInWideAngleCamera
         }
+    }
+    
+    fileprivate func initCaptureSession() {
+        captureSession.sessionPreset = .hd1920x1080
+        
+        let cameraType = configureCamera()
 
         guard let camera = AVCaptureDevice.default(cameraType, for: .video, position: .back) else {
             print("Camera not accessible")
